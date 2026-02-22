@@ -1,4 +1,5 @@
 # Functional Design Specification (FDS)
+
 ## Web-Based UNO Game for itch.io
 
 **Document Version:** 1.0  
@@ -11,6 +12,7 @@
 ## 1. EXECUTIVE SUMMARY
 
 This document specifies the design and implementation of **UNO Web**, a real-time multiplayer card game hosted on itch.io. The game uses:
+
 - **Frontend:** HTML5 + JavaScript/TypeScript running in the browser
 - **Backend:** Python (FastAPI) WebSocket server for game logic and state management
 - **Hosting:** Static HTML5 client on itch.io, Python backend on external VPS/service (Render, Railway, etc.)
@@ -18,6 +20,7 @@ This document specifies the design and implementation of **UNO Web**, a real-tim
 The game supports 2–4 players, local browser sessions (no account system), and deterministic game state synchronized via WebSocket.
 
 ### Key Features
+
 - Real-time multiplayer gameplay (2–4 players)
 - Turn-based UNO rules with all standard card actions
 - Responsive UI for desktop and tablet
@@ -33,22 +36,22 @@ The game supports 2–4 players, local browser sessions (no account system), and
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PLAYER BROWSERS                               │
+│                    PLAYER BROWSERS                              │
 │  (itch.io served HTML5 + JS client, runs locally on device)     │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                     WebSocket over HTTPS
                            │
 ┌──────────────────────────▼──────────────────────────────────────┐
-│          PYTHON BACKEND (FastAPI + WebSocket)                    │
+│          PYTHON BACKEND (FastAPI + WebSocket)                   │
 │  Deployed on: Render, Railway, DigitalOcean, or similar         │
-│  Responsibilities:                                               │
+│  Responsibilities:                                              │
 │  • Game state management (players, hands, deck, turn order)     │
-│  • Rule enforcement (valid move validation)                      │
+│  • Rule enforcement (valid move validation)                     │
 │  • Room management (create, join, leave, cleanup)               │
 │  • Real-time state broadcast to all clients                     │
 │  • Timeout handling (disconnect, turn timeout)                  │
-└──────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 2.2 Frontend Stack
@@ -75,6 +78,7 @@ The game supports 2–4 players, local browser sessions (no account system), and
 | **Environment** | `.env` file for secrets | API keys, allowed origins, etc. |
 
 **Deployment:** Container (Docker) or direct Python on:
+
 - **Render** (free tier: ~7.5 hrs/month)
 - **Railway** (pay-as-you-go, ~5 USD/month for idle)
 - **DigitalOcean App Platform** (~5 USD/month)
@@ -86,6 +90,7 @@ The game supports 2–4 players, local browser sessions (no account system), and
 ### 3.1 Card Deck Composition
 
 Standard UNO deck (108 cards):
+
 - **Number Cards (0–9):** 4 colors × 9 denominations + 1 zero = 76 cards
   - 0: 1 per color
   - 1–9: 2 per color
@@ -101,6 +106,7 @@ Standard UNO deck (108 cards):
 ### 3.2 Game Flow
 
 #### Setup Phase
+
 1. **Dealer Role:** First player (room creator or random).
 2. **Deal:** Each player receives 7 cards.
 3. **Discard Pile:** Top card of deck starts the discard pile.
@@ -108,6 +114,7 @@ Standard UNO deck (108 cards):
 4. **Turn Order:** Clockwise from dealer.
 
 #### Turn Sequence (Per Player)
+
 1. **Check Hand:** Player views their cards.
 2. **Play or Draw:**
    - **Valid Play:** Play a card matching color, number, or symbol to discard pile.
@@ -119,6 +126,7 @@ Standard UNO deck (108 cards):
 5. **Turn Ends:** Next player in turn order plays.
 
 #### Card Actions
+
 | Card | Effect |
 |------|--------|
 | **Skip** | Next player skips their turn. |
@@ -134,6 +142,7 @@ Standard UNO deck (108 cards):
 **Game Win:** Cumulative scoring to 500 points.
 
 #### Scoring (Per Round)
+
 | Card Type | Points |
 |-----------|--------|
 | Number (0–9) | Face value |
@@ -157,6 +166,7 @@ Winner tallies all opponent card values; first to 500 wins overall game.
 ### 4.1 Frontend Architecture
 
 #### Module Structure
+
 ```
 index.html
 ├── <head>
@@ -171,6 +181,7 @@ index.html
 ```
 
 #### UI Components
+
 1. **Main Menu Screen**
    - Title "UNO Web"
    - Input field: Player name (default: "Player X")
@@ -190,7 +201,7 @@ index.html
    - **Bottom:** Current player's hand (fan of draggable cards)
    - **Top:** Turn indicator, Current color, Active player highlight
    - **Right Panel:** Chat log, Spectators count, Settings button
-   - **Action Buttons:** 
+   - **Action Buttons:**
      - "Play Card" (after selecting from hand)
      - "Draw Card" (if no playable card)
      - "Challenge" (if Draw 4 played)
@@ -203,6 +214,7 @@ index.html
    - Button: "Play Again" or "Return to Menu"
 
 #### State Management (Client-Side)
+
 ```typescript
 interface ClientGameState {
   roomCode: string;
@@ -232,6 +244,7 @@ interface ClientGameState {
 #### Core Modules
 
 **`main.py` (FastAPI App)**
+
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -250,6 +263,7 @@ async def websocket_endpoint(websocket, room_code, player_id):
 ```
 
 **`game_engine.py` (Game Rules & State)**
+
 ```python
 class Card:
     def __init__(self, color: str, value: str):
@@ -314,6 +328,7 @@ class GameRoom:
 ```
 
 **`room_manager.py` (Room & Player Management)**
+
 ```python
 class RoomManager:
     def __init__(self):
@@ -336,6 +351,7 @@ class RoomManager:
 ```
 
 **`socket_handler.py` (WebSocket Event Routing)**
+
 ```python
 class SocketHandler:
     def __init__(self, socket_manager, room_manager):
@@ -529,8 +545,10 @@ def serialize_game_state(game_room: GameRoom, observer_player_id: str = None) ->
 ### 6.1 Frontend Deployment (itch.io)
 
 **Steps:**
+
 1. Build HTML5 artifact: `index.html` + inline CSS + inline JS (or bundle.js served from CDN).
 2. Create ZIP: `uno-web.zip`
+
    ```
    uno-web/
    ├── index.html
@@ -539,6 +557,7 @@ def serialize_game_state(game_room: GameRoom, observer_player_id: str = None) ->
    │   └── sounds/ (optional)
    └── (bundle.js if separate)
    ```
+
 3. Login to itch.io dashboard → My projects → Create new project.
 4. Upload ZIP, configure:
    - Kind: HTML
@@ -547,6 +566,7 @@ def serialize_game_state(game_room: GameRoom, observer_player_id: str = None) ->
 5. Mark as public, set backend URL in client (via `.env` or hardcoded config).
 
 **Environment Setup (Client):**
+
 ```typescript
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://uno-backend.example.com";
 const WEBSOCKET_URL = BACKEND_URL.replace(/^http/, 'ws');
@@ -555,7 +575,9 @@ const WEBSOCKET_URL = BACKEND_URL.replace(/^http/, 'ws');
 ### 6.2 Backend Deployment (VPS)
 
 **Option A: Render (Recommended for simplicity)**
+
 1. Create `render.yaml` in repo:
+
    ```yaml
    services:
      - type: web
@@ -567,6 +589,7 @@ const WEBSOCKET_URL = BACKEND_URL.replace(/^http/, 'ws');
          - key: PYTHONUNBUFFERED
            value: true
    ```
+
 2. Push to GitHub, connect Render.
 3. Deploy. Free tier: app spins down after 15 min inactivity (~7.5 hrs/month active time).
 
@@ -574,6 +597,7 @@ const WEBSOCKET_URL = BACKEND_URL.replace(/^http/, 'ws');
 Similar Docker/Dockerfile setup; ~5–10 USD/month for always-on.
 
 **Backend Structure:**
+
 ```
 uno-backend/
 ├── main.py
@@ -588,6 +612,7 @@ uno-backend/
 ```
 
 **`requirements.txt`:**
+
 ```
 fastapi==0.104.1
 uvicorn==0.24.0
@@ -689,6 +714,7 @@ app.add_middleware(
 ### 8.1 Unit Tests (Backend)
 
 **Test Cases:**
+
 - Card play validation (valid color, valid number, wild card)
 - Turn advancement with each action (Skip, Reverse, Draw 2, Draw 4)
 - UNO call detection and penalty

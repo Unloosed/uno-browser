@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "based-uno-web-app"
+version = "0.1.0"
+description = "Simple FastAPI web app with WebSockets"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["fastapi[standard]", "uvicorn[standard]"]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+app = "main:app"
